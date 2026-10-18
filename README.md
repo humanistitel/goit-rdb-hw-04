@@ -1,39 +1,32 @@
 # ДЗ 4 · DDL, DML і бізнес-запити: Olist
 
-Матеріали домашньої роботи з курсу **Relational Databases for Data Science**.
+Типізована схема Olist з PK/FK/CHECK, зміна записів, JOIN, агрегування, сегментація покупців і оцінки продавців.
 
-[Відкрити notebook у Google Colab](https://colab.research.google.com/github/humanistitel/goit-rdb-hw-04/blob/main/Diuryk_hw4_olist.ipynb) · [Завантажити `.ipynb`](https://raw.githubusercontent.com/humanistitel/goit-rdb-hw-04/main/Diuryk_hw4_olist.ipynb)
+[Відкрити у Google Colab](https://colab.research.google.com/github/humanistitel/goit-rdb-hw-04/blob/main/Diuryk_hw4_olist.ipynb) · [Завантажити notebook](https://raw.githubusercontent.com/humanistitel/goit-rdb-hw-04/main/Diuryk_hw4_olist.ipynb)
 
-## Google Colab
+## Запуск
 
-1. Відкрийте посилання Colab вище у стандартному **Python 3 / CPU** runtime.
-2. Виконайте **Runtime → Run all**. Notebook сам підготує залежності, власний PostgreSQL 16 і потрібні дані. Додаткові клітинки або ручне копіювання файлів не потрібні.
+У Colab оберіть CPU та натисніть **Runtime → Run all**. Перша клітинка готує залежності й тимчасовий PostgreSQL 16; остання зупиняє сервер. Перший запуск потребує інтернету. Якщо виконання перервано, запустіть останню клітинку для зупинки сервера.
 
-Перший запуск потребує інтернету й часу на встановлення PostgreSQL та отримання даних. Сумісні встановлені бібліотеки зберігаються; фактичні версії відображаються під час виконання. Після завершення збережіть notebook із результатами. Якщо виконання перервано після запуску PostgreSQL, виконайте останню клітинку cleanup.
+Локально: Jupyter та Python 3.9–3.12.
 
-Файл `.ipynb` також можна завантажити та відкрити через **File → Upload notebook**.
+## Дані
 
-## Запуск і залежності
+[Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce), Olist, ліцензія [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).
 
-Усі SQL і runtime-код вбудовано в notebook; зовнішні генератори не потрібні.
+Відсутні CSV завантажуються з [офіційного Kaggle ZIP, версія 2](https://www.kaggle.com/api/v1/datasets/download/olistbr/brazilian-ecommerce?datasetVersionNumber=2), storage version `55151/2669146`. ZIP має 44 717 580 байтів; SHA-256 `967e41e04fc306fe604e2a693f488995a8b41e5047418f8a5c8e4abd6deca784`.
 
-У стандартному Colab з Python 3.13 PostgreSQL 16 встановлюється із системних пакетів Ubuntu й працює у власному кластері через локальний Unix socket. Зовнішня база або credentials не потрібні. Для локального запуску підтримується Python 3.9–3.12 з `pgserver==0.1.4`. Остання клітинка зупиняє власний PostgreSQL.
-
-## Джерело й отримання даних
-
-[Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce), автор Olist, ліцензія [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/). Дані не додаються до Git і не отримують іншу ліцензію від цього репозиторію.
-
-За відсутності CSV notebook сам отримує [закріплений офіційний Kaggle ZIP, datasetVersionNumber=2](https://www.kaggle.com/api/v1/datasets/download/olistbr/brazilian-ecommerce?datasetVersionNumber=2), перевіряє SHA-256, витягує тільки потрібні таблиці в `data/olist/`, перевіряє їхні hashes, заголовки й кількість логічних записів. Оригінальний ZIP має 44 717 580 байтів; SHA-256 `967e41e04fc306fe604e2a693f488995a8b41e5047418f8a5c8e4abd6deca784` (зафіксована storage version `55151/2669146`). Дані не обрізаються до довільного sample.
-
-| CSV | Рядків без заголовка |
+| Таблиця | Записів |
 | --- | ---: |
-| `olist_customers_dataset.csv` | 99 441 |
-| `olist_orders_dataset.csv` | 99 441 |
-| `olist_order_items_dataset.csv` | 112 650 |
-| `olist_products_dataset.csv` | 32 951 |
-| `olist_sellers_dataset.csv` | 3 095 |
-| `olist_order_reviews_dataset.csv` | 99 224 |
+| customers | 99 441 |
+| orders | 99 441 |
+| order_items | 112 650 |
+| products | 32 951 |
+| sellers | 3 095 |
+| order_reviews | 99 224 |
 
-Якщо офіційний endpoint недоступний, використайте відповідні перевірені CSV з власного локального пакета в `data/olist/`; hashes мають збігатися. Kaggle credentials у цьому репозиторії не зберігаються.
+## Запити
 
-Сирі CSV спочатку завантажуються в raw-таблиці; SQL формує типізовані таблиці з constraints. Робота містить DDL/DML, JOIN, агрегування, сегментацію покупців, seller score, негативні перевірки цілісності й Reflection. Зерно таблиць і правила ідентифікації покупців пояснено в notebook.
+CSV спочатку завантажуються в raw-таблиці; SQL формує типізовані таблиці. Приклади містять INSERT, UPDATE, DELETE, upsert, п’ять типів JOIN, GROUP BY/HAVING та віконні функції.
+
+Сегментація використовує `customer_unique_id` і дату 2018-10-18. Відгук належить замовленню, тому оцінка замовлення з кількома продавцями спільна для них. Порядок округлення оцінок і правила обчислення сум наведено в notebook.
